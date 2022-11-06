@@ -26,9 +26,9 @@ class Workout {
     } ${this.date.getDate()}`;
   }
 
-  click() {
-    this.clicks++;
-  }
+  // click() {
+  //   this.clicks++;
+  // }
 }
 
 class Running extends Workout {
@@ -70,10 +70,15 @@ class App {
   #coords;
   #workout = [];
   constructor() {
+    // Get User position
     this._getPositon();
+
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggalElevationField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+
+    // Get data form local storage
+    this._getLocalstorage();
   }
 
   _getPositon() {
@@ -85,9 +90,6 @@ class App {
 
   _loadMap(position) {
     const { latitude, longitude } = position.coords;
-    console.log(position);
-    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
-
     this.#coords = [latitude, longitude];
 
     this.#map = L.map('map').setView(this.#coords, this.#mapZoomLevel);
@@ -98,6 +100,10 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on('click', this._showForm.bind(this));
+
+    this.#workout.forEach(work => {
+      this._renderWorkoutMarker(work);
+    });
   }
 
   _showForm(mapE) {
@@ -150,9 +156,8 @@ class App {
       if (
         !validInputs(distance, duration, cadence) ||
         !allPositive(distance, duration, cadence)
-      ) {
+      )
         return alert('Invalid input data, enter valid data.');
-      }
 
       workout = new Running([lat, lng], distance, duration, cadence);
     }
@@ -164,9 +169,9 @@ class App {
       if (
         !validInputs(distance, duration, elevation) ||
         !allPositive(distance, duration)
-      ) {
+      )
         return alert('Invalid input data, enter valid data.');
-      }
+
       workout = new Cycling([lat, lng], distance, duration, elevation);
     }
 
@@ -178,8 +183,8 @@ class App {
     this._renderWorkout(workout);
     // Hide form + CLear input fieds
     this._hideForm();
-    // console.log(mapEvent.latlng);
-    console.log(workout);
+    // Set local storage to all workout
+    this._setLocalstorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -201,7 +206,6 @@ class App {
   }
 
   _renderWorkout(workout) {
-    console.log(workout);
     let html = `
      <li class="workout workout--${workout.type}" data-id="${workout.id}">
        <h2 class="workout__title">${workout.discription}</h2>
@@ -265,7 +269,28 @@ class App {
       },
     });
 
-    workout.click();
+    // workout.click();
+  }
+
+  _setLocalstorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workout));
+  }
+
+  _getLocalstorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+
+    if (!data) return;
+
+    this.#workout = data;
+
+    this.#workout.forEach(work => {
+      this._renderWorkout(work);
+    });
+  }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
